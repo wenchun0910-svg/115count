@@ -160,7 +160,7 @@
     } else {
         firebaseConfig = {
             // ⚠️ 上傳到 GitHub 前，請替換成您在 Firebase Console 取得的設定
-          apiKey: "AIzaSyBHgd1oZGUWq9VabYRNMNAzBIk1CkQqr84",
+           apiKey: "AIzaSyBHgd1oZGUWq9VabYRNMNAzBIk1CkQqr84",
   authDomain: "count-e1a9e.firebaseapp.com",
   projectId: "count-e1a9e",
   storageBucket: "count-e1a9e.firebasestorage.app",
@@ -233,17 +233,65 @@
       btn.innerText = '驗證中...'; btn.disabled = true;
 
       try {
-    await batch.commit();
-    showMsg('全班點數已更新完畢！');
-    await loadStudents(); // 重新讀取顯示最新數據
-  } catch (err) {
-    showMsg('更新失敗，請檢查網路。');
-  } finally {
-    btn.disabled = false; btn.innerText = '🎌 統一更新全班點數 (執行累加)';
-  }
-}
+        await auth.authStateReady();
+        const settingsRef = doc(db, getColPath('settings'), 'admin');
+        let snap = await getDoc(settingsRef);
+        
+        // 初次使用自動建立密碼
+        if (!snap.exists()) {
+          await setDoc(settingsRef, { password: '1234' });
+          snap = await getDoc(settingsRef);
+        }
 
-// 智慧匯入 (兼顧移轉與每週更新)
+        if (snap.data().password === p) {
+          currentPwd = p;
+          document.getElementById('loginBox').style.display = 'none';
+          document.getElementById('adminPanel').style.display = 'block';
+          await loadStudents();
+        } else { 
+          showMsg('密碼錯誤'); 
+        }
+      } catch (err) {
+        showMsg('連線失敗，請稍後再試。');
+      } finally {
+        btn.innerText = '登入系統'; btn.disabled = false;
+      }
+    }
+
+    // 手動更新 (累加)
+    window.submitBatch = async function() {
+      const inputs = document.querySelectorAll('.point-input');
+      const batch = writeBatch(db);
+      let hasData = false;
+
+      inputs.forEach(i => {
+        const val = Number(i.value);
+        if (val && val !== 0) {
+          const id = i.dataset.id;
+          const ref = doc(db, getColPath('students'), id);
+          const currentTotal = currentStudents[id] ? currentStudents[id].total : 0;
+          batch.set(ref, { total: currentTotal + val }, { merge: true });
+          hasData = true;
+        }
+      });
+      
+      if(!hasData) return showMsg('請先輸入至少一位學生的加減分');
+
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true; btn.innerText = '正在寫入資料庫...';
+
+      try {
+        await batch.commit();
+        showMsg('全班點數已更新完畢！');
+        await loadStudents(); // 重新讀取顯示最新數據
+      } catch (err) {
+        showMsg('更新失敗，請檢查網路。');
+      } finally {
+        btn.disabled = false; btn.innerText = '🎌 統一更新全班點數 (執行累加)';
+      }
+    }
+
+    // 智慧匯入 (兼顧移轉與每週更新)
     window.importData = async function(mode) {
       const csv = document.getElementById('csvInput').value.trim();
       if(!csv) return showMsg('請先貼上資料');
