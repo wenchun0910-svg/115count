@@ -5,20 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>班級點數管理後台</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body { background-color: #f8f9fa; font-family: "Microsoft JhengHei", sans-serif; padding-bottom: 30px; }
+    body { background-color: #f4f0ea; font-family: "Noto Serif TC", "Microsoft JhengHei", serif; padding-bottom: 30px; color: #4a433c; }
     .main-container { max-width: 900px; margin: 0 auto; padding: 20px 15px; }
-    .card { border: none; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; overflow: hidden; }
-    .title-banner { font-weight: bold; font-size: clamp(1.5rem, 4vw, 2rem); color: #2c3e50; margin: 20px 0 30px; }
+    .card { background-color: #fffcf7; border: 1px solid #e8e3d3; border-radius: 12px; box-shadow: 0 8px 24px rgba(107, 94, 81, 0.06); margin-bottom: 20px; overflow: hidden; }
+    .title-banner { font-weight: 700; font-size: clamp(1.5rem, 4vw, 2rem); color: #4a433c; margin: 20px 0 30px; letter-spacing: 2px; }
     
-    .table th { background-color: #fcfcfc; color: #555; white-space: nowrap; }
-    .table td { vertical-align: middle; white-space: nowrap; }
-    .point-input { width: 85px; border-radius: 8px; border: 1px solid #ced4da; text-align: center; padding: 8px; font-size: 16px; }
-    .point-input:focus { border-color: #4e73df; box-shadow: 0 0 0 0.2rem rgba(78,115,223,0.25); outline: none; }
+    .table th { background-color: #f0ebe1; color: #5c544a; border-bottom: 2px solid #e1dacb; white-space: nowrap; font-weight: 600; }
+    .table td { vertical-align: middle; white-space: nowrap; border-bottom: 1px solid #f0ebe1; color: #4a433c; }
+    .point-input { width: 85px; border-radius: 6px; border: 1px solid #dcd7c9; background-color: #fffdfa; text-align: center; padding: 8px; font-size: 16px; color: #4a433c; }
+    .point-input:focus { border-color: #7b8d62; box-shadow: 0 0 0 0.2rem rgba(123, 141, 98, 0.25); outline: none; }
+    .form-control { background-color: #fffdfa; border: 1px solid #dcd7c9; color: #4a433c; }
+    .form-control:focus { border-color: #7b8d62; box-shadow: 0 0 0 0.2rem rgba(123, 141, 98, 0.25); outline: none; }
     
+    /* Buttons */
+    .btn-primary { background-color: #7b8d62; border-color: #7b8d62; color: #fff; }
+    .btn-primary:hover { background-color: #657551; border-color: #657551; }
+    .btn-dark { background-color: #4a433c; border-color: #4a433c; color: #fff; }
+    .btn-dark:hover { background-color: #36312c; color: #fff; }
+    .btn-outline-primary { color: #7b8d62; border-color: #7b8d62; }
+    .btn-outline-primary:hover { background-color: #7b8d62; color: #fff; }
+    .btn-outline-danger { color: #ba6b66; border-color: #ba6b66; }
+    .btn-outline-danger:hover { background-color: #ba6b66; color: #fff; }
+    .btn-danger { background-color: #ba6b66; border-color: #ba6b66; color: #fff; }
+    .btn-light { background-color: #f0ebe1; border-color: #e8e3d3; color: #4a433c; }
+    .btn-secondary { background-color: #8a8276; border-color: #8a8276; color: #fff; }
+    .modal-content { background-color: #fffcf7; border: 1px solid #e8e3d3; color: #4a433c; }
+
     .nav-pills { gap: 10px; }
-    .nav-pills .nav-link { font-weight: bold; color: #6c757d; border-radius: 10px; padding: 10px 15px; transition: 0.3s; cursor: pointer; }
-    .nav-pills .nav-link.active { background-color: #4e73df; color: white; box-shadow: 0 4px 10px rgba(78,115,223,0.3); }
+    .nav-pills .nav-link { font-weight: 600; color: #8a8276; border-radius: 8px; padding: 10px 15px; transition: 0.3s; cursor: pointer; }
+    .nav-pills .nav-link.active { background-color: #7b8d62; color: white; box-shadow: 0 4px 10px rgba(123, 141, 98, 0.3); }
     @media (max-width: 576px) {
       .nav-pills { flex-direction: column; }
       .nav-pills .nav-item { width: 100%; }
@@ -28,7 +45,7 @@
 </head>
 <body>
   <div class="main-container">
-    <div class="title-banner text-center">🎓 班級點數管理系統</div>
+    <div class="title-banner text-center">🏮 班級點數管理系統</div>
 
     <!-- 驗證區 -->
     <div id="loginBox" class="card p-4 p-md-5">
@@ -40,9 +57,9 @@
     <!-- 管理主介面 -->
     <div id="adminPanel" style="display:none;">
       <ul class="nav nav-pills mb-4 justify-content-center">
-        <li class="nav-item"><a class="nav-link active" onclick="showTab('edit')">✍️ 手動輸入增減</a></li>
-        <li class="nav-item"><a class="nav-link" onclick="showTab('import')">📥 批次匯入檔案</a></li>
-        <li class="nav-item"><a class="nav-link" onclick="showTab('setting')">⚙️ 系統設定</a></li>
+        <li class="nav-item"><a class="nav-link active" onclick="showTab('edit')">🖌️ 手動輸入增減</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showTab('import')">📜 批次匯入檔案</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showTab('setting')">⛩️ 系統設定</a></li>
       </ul>
 
       <!-- 方式 1: 手動輸入列表 -->
@@ -58,54 +75,54 @@
               </tr>
             </thead>
             <tbody id="stuTable"></tbody>
-          </table>
-        </div>
-        <button class="btn btn-primary btn-lg w-100 mt-3 py-3 fw-bold rounded-3 shadow" id="saveBtn" onclick="submitBatch()">
-           🚀 統一更新全班點數 (執行累加)
+      </table>
+    </div>
+    <button class="btn btn-primary btn-lg w-100 mt-3 py-3 fw-bold rounded-3 shadow" id="saveBtn" onclick="submitBatch()">
+       🎌 統一更新全班點數 (執行累加)
+    </button>
+  </div>
+
+  <!-- 方式 2: CSV 匯入 -->
+  <div id="tab-import" class="card p-4 p-md-5" style="display:none;">
+    <h5 class="fw-bold mb-3">📜 大量更新點數 (智慧模式)</h5>
+    <div class="alert alert-light border small text-muted mb-4" style="background-color: #fdfaf5; border-color: #e8e3d3;">
+      <b>📌 智慧判斷功能：</b><br>
+      • <b>【初次移轉】</b> 貼上 <code>學號,姓名,點數,密碼</code> 建立完整資料。<br>
+      • <b>【日後更新】</b> 貼上 <code>學號,點數</code> 即可直接對現有分數進行操作。
+    </div>
+    <textarea id="csvInput" class="form-control mb-4 rounded-3" rows="8" placeholder="1,5&#10;2,-2"></textarea>
+    
+    <div class="row g-3">
+      <div class="col-12 col-md-6">
+        <button class="btn btn-outline-primary w-100 py-3 fw-bold rounded-3 h-100" onclick="importData('add')">
+          🍵 依據內容「累加」
+          <div class="small fw-normal mt-1">原有 100 + 輸入 5 = 105</div>
         </button>
       </div>
-
-      <!-- 方式 2: CSV 匯入 -->
-      <div id="tab-import" class="card p-4 p-md-5" style="display:none;">
-        <h5 class="fw-bold mb-3">📥 大量更新點數 (智慧模式)</h5>
-        <div class="alert alert-light border small text-muted mb-4">
-          <b>📌 智慧判斷功能：</b><br>
-          • <b>【初次移轉】</b> 貼上 <code>學號,姓名,點數,密碼</code> 建立完整資料。<br>
-          • <b>【日後更新】</b> 貼上 <code>學號,點數</code> 即可直接對現有分數進行操作。
-        </div>
-        <textarea id="csvInput" class="form-control mb-4 rounded-3" rows="8" placeholder="1,5&#10;2,-2"></textarea>
-        
-        <div class="row g-3">
-          <div class="col-12 col-md-6">
-            <button class="btn btn-outline-primary w-100 py-3 fw-bold rounded-3 h-100" onclick="importData('add')">
-              ➕ 依據內容「累加」
-              <div class="small fw-normal mt-1">原有 100 + 輸入 5 = 105</div>
-            </button>
-          </div>
-          <div class="col-12 col-md-6">
-            <button class="btn btn-outline-danger w-100 py-3 fw-bold rounded-3 h-100" onclick="importData('replace')">
-              🔄 覆蓋為「全新值」
-              <div class="small fw-normal mt-1">原有 100 會直接變成 5</div>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 其他設定 -->
-      <div id="tab-setting" class="card p-4 p-md-5" style="display:none;">
-        <h5 class="fw-bold mb-4">系統安全設定</h5>
-        <label class="form-label text-muted small">新管理密碼</label>
-        <div class="input-group mb-4">
-          <input type="text" id="newAdminPwd" class="form-control form-control-lg" placeholder="輸入新密碼">
-          <button class="btn btn-secondary px-4" onclick="changeAdminPwd()">更新</button>
-        </div>
-        <hr class="my-4">
-        <button class="btn btn-light text-danger w-100 py-3 fw-bold rounded-3" onclick="location.reload()">🔒 登出系統</button>
+      <div class="col-12 col-md-6">
+        <button class="btn btn-outline-danger w-100 py-3 fw-bold rounded-3 h-100" onclick="importData('replace')">
+          🌸 覆蓋為「全新值」
+          <div class="small fw-normal mt-1">原有 100 會直接變成 5</div>
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- 自訂彈窗 -->
+  <!-- 其他設定 -->
+  <div id="tab-setting" class="card p-4 p-md-5" style="display:none;">
+    <h5 class="fw-bold mb-4">系統安全設定</h5>
+    <label class="form-label text-muted small">新管理密碼</label>
+    <div class="input-group mb-4">
+      <input type="text" id="newAdminPwd" class="form-control form-control-lg" placeholder="輸入新密碼">
+      <button class="btn btn-secondary px-4" onclick="changeAdminPwd()">更新</button>
+    </div>
+    <hr class="my-4" style="border-color: #e8e3d3;">
+    <button class="btn btn-light text-danger w-100 py-3 fw-bold rounded-3" onclick="location.reload()">🎋 登出系統</button>
+  </div>
+</div>
+</div>
+
+<!-- 自訂彈窗 -->
   <div class="modal fade" id="msgModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
       <div class="modal-content border-0 shadow">
@@ -143,12 +160,12 @@
     } else {
         firebaseConfig = {
             // ⚠️ 上傳到 GitHub 前，請替換成您在 Firebase Console 取得的設定
-            apiKey: "您的_API_KEY",
-            authDomain: "您的_PROJECT.firebaseapp.com",
-            projectId: "您的_PROJECT_ID",
-            storageBucket: "您的_PROJECT.appspot.com",
-            messagingSenderId: "您的_SENDER_ID",
-            appId: "您的_APP_ID"
+          apiKey: "AIzaSyBHgd1oZGUWq9VabYRNMNAzBIk1CkQqr84",
+  authDomain: "count-e1a9e.firebaseapp.com",
+  projectId: "count-e1a9e",
+  storageBucket: "count-e1a9e.firebasestorage.app",
+  messagingSenderId: "268106620866",
+  appId: "1:268106620866:web:3df68d25dfa9d7869f005b"
         };
     }
     
@@ -216,65 +233,17 @@
       btn.innerText = '驗證中...'; btn.disabled = true;
 
       try {
-        await auth.authStateReady();
-        const settingsRef = doc(db, getColPath('settings'), 'admin');
-        let snap = await getDoc(settingsRef);
-        
-        // 初次使用自動建立密碼
-        if (!snap.exists()) {
-          await setDoc(settingsRef, { password: '1234' });
-          snap = await getDoc(settingsRef);
-        }
+    await batch.commit();
+    showMsg('全班點數已更新完畢！');
+    await loadStudents(); // 重新讀取顯示最新數據
+  } catch (err) {
+    showMsg('更新失敗，請檢查網路。');
+  } finally {
+    btn.disabled = false; btn.innerText = '🎌 統一更新全班點數 (執行累加)';
+  }
+}
 
-        if (snap.data().password === p) {
-          currentPwd = p;
-          document.getElementById('loginBox').style.display = 'none';
-          document.getElementById('adminPanel').style.display = 'block';
-          await loadStudents();
-        } else { 
-          showMsg('密碼錯誤'); 
-        }
-      } catch (err) {
-        showMsg('連線失敗，請稍後再試。');
-      } finally {
-        btn.innerText = '登入系統'; btn.disabled = false;
-      }
-    }
-
-    // 手動更新 (累加)
-    window.submitBatch = async function() {
-      const inputs = document.querySelectorAll('.point-input');
-      const batch = writeBatch(db);
-      let hasData = false;
-
-      inputs.forEach(i => {
-        const val = Number(i.value);
-        if (val && val !== 0) {
-          const id = i.dataset.id;
-          const ref = doc(db, getColPath('students'), id);
-          const currentTotal = currentStudents[id] ? currentStudents[id].total : 0;
-          batch.set(ref, { total: currentTotal + val }, { merge: true });
-          hasData = true;
-        }
-      });
-      
-      if(!hasData) return showMsg('請先輸入至少一位學生的加減分');
-
-      const btn = document.getElementById('saveBtn');
-      btn.disabled = true; btn.innerText = '正在寫入 Firebase...';
-
-      try {
-        await batch.commit();
-        showMsg('全班點數已更新完畢！');
-        await loadStudents(); // 重新讀取顯示最新數據
-      } catch (err) {
-        showMsg('更新失敗，請檢查網路。');
-      } finally {
-        btn.disabled = false; btn.innerText = '🚀 統一更新全班點數 (執行累加)';
-      }
-    }
-
-    // 智慧匯入 (兼顧移轉與每週更新)
+// 智慧匯入 (兼顧移轉與每週更新)
     window.importData = async function(mode) {
       const csv = document.getElementById('csvInput').value.trim();
       if(!csv) return showMsg('請先貼上資料');
