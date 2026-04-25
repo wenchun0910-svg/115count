@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>班級點數管理後台</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f8f9fa; font-family: "Microsoft JhengHei", sans-serif; padding-bottom: 30px; }
+    .main-container { max-width: 900px; margin: 0 auto; padding: 20px 15px; }
+    .card { border: none; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; overflow: hidden; }
+    .title-banner { font-weight: bold; font-size: clamp(1.5rem, 4vw, 2rem); color: #2c3e50; margin: 20px 0 30px; }
+    
+    .table th { background-color: #fcfcfc; color: #555; white-space: nowrap; }
+    .table td { vertical-align: middle; white-space: nowrap; }
+    .point-input { width: 85px; border-radius: 8px; border: 1px solid #ced4da; text-align: center; padding: 8px; font-size: 16px; }
+    .point-input:focus { border-color: #4e73df; box-shadow: 0 0 0 0.2rem rgba(78,115,223,0.25); outline: none; }
+    
+    .nav-pills { gap: 10px; }
+    .nav-pills .nav-link { font-weight: bold; color: #6c757d; border-radius: 10px; padding: 10px 15px; transition: 0.3s; cursor: pointer; }
+    .nav-pills .nav-link.active { background-color: #4e73df; color: white; box-shadow: 0 4px 10px rgba(78,115,223,0.3); }
+    @media (max-width: 576px) {
+      .nav-pills { flex-direction: column; }
+      .nav-pills .nav-item { width: 100%; }
+      .nav-pills .nav-link { text-align: center; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="title-banner text-center">🎓 班級點數管理系統</div>
+
+    <!-- 驗證區 -->
+    <div id="loginBox" class="card p-4 p-md-5">
+      <h5 class="fw-bold mb-4 text-center">管理員驗證</h5>
+      <input type="password" id="adminPwd" class="form-control form-control-lg mb-3" placeholder="請輸入管理密碼 (預設: 1234)">
+      <button class="btn btn-dark btn-lg w-100 rounded-3 shadow-sm" onclick="login()" id="loginBtn">登入系統</button>
+    </div>
+
+    <!-- 管理主介面 -->
+    <div id="adminPanel" style="display:none;">
+      <ul class="nav nav-pills mb-4 justify-content-center">
+        <li class="nav-item"><a class="nav-link active" onclick="showTab('edit')">✍️ 手動輸入增減</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showTab('import')">📥 批次匯入檔案</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showTab('setting')">⚙️ 系統設定</a></li>
+      </ul>
+
+      <!-- 方式 1: 手動輸入列表 -->
+      <div id="tab-edit" class="card p-3 p-md-4">
+        <h5 class="fw-bold mb-3 px-2">每週點數紀錄</h5>
+        <div class="table-responsive">
+          <table class="table align-middle table-hover">
+            <thead>
+              <tr>
+                <th class="ps-3">座號姓名</th>
+                <th class="text-center">目前總分</th>
+                <th class="text-end pe-3">加/減點數</th>
+              </tr>
+            </thead>
+            <tbody id="stuTable"></tbody>
+          </table>
+        </div>
+        <button class="btn btn-primary btn-lg w-100 mt-3 py-3 fw-bold rounded-3 shadow" id="saveBtn" onclick="submitBatch()">
+           🚀 統一更新全班點數 (執行累加)
+        </button>
+      </div>
+
+      <!-- 方式 2: CSV 匯入 -->
+      <div id="tab-import" class="card p-4 p-md-5" style="display:none;">
+        <h5 class="fw-bold mb-3">📥 大量更新點數 (智慧模式)</h5>
+        <div class="alert alert-light border small text-muted mb-4">
+          <b>📌 智慧判斷功能：</b><br>
+          • <b>【初次移轉】</b> 貼上 <code>學號,姓名,點數,密碼</code> 建立完整資料。<br>
+          • <b>【日後更新】</b> 貼上 <code>學號,點數</code> 即可直接對現有分數進行操作。
+        </div>
+        <textarea id="csvInput" class="form-control mb-4 rounded-3" rows="8" placeholder="1,5&#10;2,-2"></textarea>
+        
+        <div class="row g-3">
+          <div class="col-12 col-md-6">
+            <button class="btn btn-outline-primary w-100 py-3 fw-bold rounded-3 h-100" onclick="importData('add')">
+              ➕ 依據內容「累加」
+              <div class="small fw-normal mt-1">原有 100 + 輸入 5 = 105</div>
+            </button>
+          </div>
+          <div class="col-12 col-md-6">
+            <button class="btn btn-outline-danger w-100 py-3 fw-bold rounded-3 h-100" onclick="importData('replace')">
+              🔄 覆蓋為「全新值」
+              <div class="small fw-normal mt-1">原有 100 會直接變成 5</div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 其他設定 -->
+      <div id="tab-setting" class="card p-4 p-md-5" style="display:none;">
+        <h5 class="fw-bold mb-4">系統安全設定</h5>
+        <label class="form-label text-muted small">新管理密碼</label>
+        <div class="input-group mb-4">
+          <input type="text" id="newAdminPwd" class="form-control form-control-lg" placeholder="輸入新密碼">
+          <button class="btn btn-secondary px-4" onclick="changeAdminPwd()">更新</button>
+        </div>
+        <hr class="my-4">
+        <button class="btn btn-light text-danger w-100 py-3 fw-bold rounded-3" onclick="location.reload()">🔒 登出系統</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 自訂彈窗 -->
+  <div class="modal fade" id="msgModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-body text-center p-4">
+          <div id="msgText" class="fs-6 mb-4 mt-2 text-dark"></div>
+          <button type="button" class="btn btn-primary w-100 rounded-3" data-bs-dismiss="modal">確定</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-body text-center p-4">
+          <div id="confirmText" class="fs-6 mb-4 mt-2 text-dark"></div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-light w-50 rounded-3" data-bs-dismiss="modal" id="confirmCancel">取消</button>
+            <button type="button" class="btn btn-danger w-50 rounded-3" id="confirmOk">確定執行</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, getDocs, collection, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    let firebaseConfig;
+    if (typeof __firebase_config !== 'undefined') {
+        firebaseConfig = JSON.parse(__firebase_config);
+    } else {
+        firebaseConfig = {
+            // ⚠️ 上傳到 GitHub 前，請替換成您在 Firebase Console 取得的設定
+            apiKey: "您的_API_KEY",
+            authDomain: "您的_PROJECT.firebaseapp.com",
+            projectId: "您的_PROJECT_ID",
+            storageBucket: "您的_PROJECT.appspot.com",
+            messagingSenderId: "您的_SENDER_ID",
+            appId: "您的_APP_ID"
+        };
+    }
+    
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'class-app';
+    const getColPath = (col) => typeof __app_id !== 'undefined' ? `artifacts/${appId}/public/data/${col}` : col;
+
+    let currentPwd = '';
+    let currentStudents = {};
+
+    signInAnonymously(auth).catch(err => console.error("Auth failed:", err));
+
+    // UI 彈窗處理
+    const msgModal = new bootstrap.Modal(document.getElementById('msgModal'));
+    const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    
+    window.showMsg = function(text) {
+      document.getElementById('msgText').innerText = text;
+      msgModal.show();
+    }
+    window.showConfirm = function(text) {
+      return new Promise((resolve) => {
+        document.getElementById('confirmText').innerText = text;
+        const btnOk = document.getElementById('confirmOk');
+        const newBtnOk = btnOk.cloneNode(true);
+        btnOk.parentNode.replaceChild(newBtnOk, btnOk);
+        
+        newBtnOk.addEventListener('click', () => { confirmModal.hide(); resolve(true); });
+        document.getElementById('confirmModal').addEventListener('hidden.bs.modal', () => resolve(false), { once: true });
+        confirmModal.show();
+      });
+    }
+
+    // 載入學生資料
+    async function loadStudents() {
+      const snap = await getDocs(collection(db, getColPath('students')));
+      const list = [];
+      currentStudents = {};
+      snap.forEach(d => {
+        const data = d.data();
+        list.push(data);
+        currentStudents[data.id] = data;
+      });
+      // 依照學號/座號排序
+      list.sort((a, b) => a.id.localeCompare(b.id, undefined, {numeric: true}));
+      
+      document.getElementById('stuTable').innerHTML = list.map(s => `
+        <tr>
+          <td class="ps-3"><span class="fw-bold text-primary">${s.id}</span> <span class="ms-1">${s.name}</span></td>
+          <td class="text-center fw-bold fs-5 text-dark">${s.total}</td>
+          <td class="text-end pe-3"><input type="number" class="point-input" id="in-${s.id}" data-id="${s.id}" placeholder="+/-"></td>
+        </tr>
+      `).join('');
+    }
+
+    // 登入
+    window.login = async function() {
+      const p = document.getElementById('adminPwd').value;
+      if (!p) return showMsg('請輸入密碼');
+      
+      const btn = document.getElementById('loginBtn');
+      btn.innerText = '驗證中...'; btn.disabled = true;
+
+      try {
+        await auth.authStateReady();
+        const settingsRef = doc(db, getColPath('settings'), 'admin');
+        let snap = await getDoc(settingsRef);
+        
+        // 初次使用自動建立密碼
+        if (!snap.exists()) {
+          await setDoc(settingsRef, { password: '1234' });
+          snap = await getDoc(settingsRef);
+        }
+
+        if (snap.data().password === p) {
+          currentPwd = p;
+          document.getElementById('loginBox').style.display = 'none';
+          document.getElementById('adminPanel').style.display = 'block';
+          await loadStudents();
+        } else { 
+          showMsg('密碼錯誤'); 
+        }
+      } catch (err) {
+        showMsg('連線失敗，請稍後再試。');
+      } finally {
+        btn.innerText = '登入系統'; btn.disabled = false;
+      }
+    }
+
+    // 手動更新 (累加)
+    window.submitBatch = async function() {
+      const inputs = document.querySelectorAll('.point-input');
+      const batch = writeBatch(db);
+      let hasData = false;
+
+      inputs.forEach(i => {
+        const val = Number(i.value);
+        if (val && val !== 0) {
+          const id = i.dataset.id;
+          const ref = doc(db, getColPath('students'), id);
+          const currentTotal = currentStudents[id] ? currentStudents[id].total : 0;
+          batch.set(ref, { total: currentTotal + val }, { merge: true });
+          hasData = true;
+        }
+      });
+      
+      if(!hasData) return showMsg('請先輸入至少一位學生的加減分');
+
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true; btn.innerText = '正在寫入 Firebase...';
+
+      try {
+        await batch.commit();
+        showMsg('全班點數已更新完畢！');
+        await loadStudents(); // 重新讀取顯示最新數據
+      } catch (err) {
+        showMsg('更新失敗，請檢查網路。');
+      } finally {
+        btn.disabled = false; btn.innerText = '🚀 統一更新全班點數 (執行累加)';
+      }
+    }
+
+    // 智慧匯入 (兼顧移轉與每週更新)
+    window.importData = async function(mode) {
+      const csv = document.getElementById('csvInput').value.trim();
+      if(!csv) return showMsg('請先貼上資料');
+      
+      const isConfirmed = await showConfirm(mode === 'add' ? '確定要「累加」這些點數嗎？' : '⚠️ 確定要「覆蓋」目前點數為全新數值嗎？');
+      if(!isConfirmed) return;
+
+      try {
+        const lines = csv.split('\n');
+        const batch = writeBatch(db);
+        let count = 0;
+
+        for (let line of lines) {
+          const parts = line.split(',').map(s => s.trim());
+          if (parts.length >= 2 && parts[0] !== '') {
+            const id = parts[0];
+            const ref = doc(db, getColPath('students'), id);
+            
+            if (parts.length >= 4) {
+              // 完整建檔模式 (從 Sheet 移轉過來): 學號, 姓名, 點數, 密碼
+              const name = parts[1];
+              const points = Number(parts[2]) || 0;
+              const pwd = parts[3];
+              const currentTotal = currentStudents[id] ? currentStudents[id].total : 0;
+              const finalPoints = (mode === 'add') ? currentTotal + points : points;
+              
+              batch.set(ref, { id, name, total: finalPoints, pwd }, { merge: true });
+            } else {
+              // 每週更新模式: 學號, 點數
+              const points = Number(parts[1]) || 0;
+              const currentTotal = currentStudents[id] ? currentStudents[id].total : 0;
+              const finalPoints = (mode === 'add') ? currentTotal + points : points;
+              
+              batch.set(ref, { total: finalPoints }, { merge: true });
+            }
+            count++;
+          }
+        }
+        
+        await batch.commit();
+        showMsg(`成功處理 ${count} 筆學生資料！`);
+        document.getElementById('csvInput').value = '';
+        await loadStudents();
+        window.showTab('edit');
+      } catch (err) {
+        console.error(err);
+        showMsg('匯入失敗，請檢查網路。');
+      }
+    }
+
+    // 修改密碼
+    window.changeAdminPwd = async function() {
+      const np = document.getElementById('newAdminPwd').value.trim();
+      if(!np) return showMsg('請輸入新密碼');
+      try {
+        const adminRef = doc(db, getColPath('settings'), 'admin');
+        await setDoc(adminRef, { password: np }, { merge: true });
+        currentPwd = np;
+        document.getElementById('newAdminPwd').value = '';
+        showMsg('密碼已成功更新！');
+      } catch(e) {
+        showMsg('更新失敗。');
+      }
+    }
+
+    window.showTab = function(tab) {
+      ['edit', 'import', 'setting'].forEach(t => document.getElementById('tab-'+t).style.display = (t===tab?'block':'none'));
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.toggle('active', l.innerText.includes(tab==='edit'?'手動':tab==='import'?'匯入':'設定')));
+    }
+  </script>
+</body>
+</html>
