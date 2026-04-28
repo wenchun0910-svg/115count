@@ -50,7 +50,7 @@
     <!-- 驗證區 -->
     <div id="loginBox" class="card p-4 p-md-5">
       <h5 class="fw-bold mb-4 text-center">管理員驗證</h5>
-      <input type="password" id="adminPwd" class="form-control form-control-lg mb-3" placeholder="請輸入管理密碼">
+      <input type="password" id="adminPwd" class="form-control form-control-lg mb-3" placeholder="請輸入管理密碼 (預設: 1234)">
       <button class="btn btn-dark btn-lg w-100 rounded-3 shadow-sm" onclick="login()" id="loginBtn">登入系統</button>
     </div>
 
@@ -58,7 +58,7 @@
     <div id="adminPanel" style="display:none;">
       <ul class="nav nav-pills mb-4 justify-content-center">
         <li class="nav-item"><a class="nav-link active" onclick="showTab('edit')">🖌️ 手動輸入增減</a></li>
-        <li class="nav-item"><a class="nav-link" onclick="showTab('import')">📜 批次匯入檔案</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showTab('import')">📜 匯入與匯出</a></li>
         <li class="nav-item"><a class="nav-link" onclick="showTab('setting')">⛩️ 系統設定</a></li>
       </ul>
 
@@ -82,8 +82,15 @@
     </button>
   </div>
 
-  <!-- 方式 2: CSV 匯入 -->
+  <!-- 方式 2: CSV 匯入與匯出 -->
   <div id="tab-import" class="card p-4 p-md-5" style="display:none;">
+    <h5 class="fw-bold mb-3">📤 匯出資料</h5>
+    <button class="btn btn-secondary w-100 py-3 fw-bold rounded-3 mb-4" onclick="exportData()">
+      📊 下載全班點數清單 (CSV 試算表)
+    </button>
+    
+    <hr class="my-4" style="border-color: #e8e3d3;">
+
     <h5 class="fw-bold mb-3">📜 大量更新點數 (智慧模式)</h5>
     <div class="alert alert-light border small text-muted mb-4" style="background-color: #fdfaf5; border-color: #e8e3d3;">
       <b>📌 智慧判斷功能：</b><br>
@@ -160,7 +167,7 @@
     } else {
         firebaseConfig = {
             // ⚠️ 上傳到 GitHub 前，請替換成您在 Firebase Console 取得的設定
-           apiKey: "AIzaSyBHgd1oZGUWq9VabYRNMNAzBIk1CkQqr84",
+apiKey: "AIzaSyBHgd1oZGUWq9VabYRNMNAzBIk1CkQqr84",
   authDomain: "count-e1a9e.firebaseapp.com",
   projectId: "count-e1a9e",
   storageBucket: "count-e1a9e.firebasestorage.app",
@@ -355,6 +362,37 @@
       } catch(e) {
         showMsg('更新失敗。');
       }
+    }
+
+    // 匯出 CSV 功能
+    window.exportData = function() {
+      if (Object.keys(currentStudents).length === 0) {
+        return showMsg('目前沒有學生資料可以匯出。');
+      }
+      
+      // 加入 BOM (\uFEFF) 確保 Excel 打開中文不會亂碼
+      let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+      csvContent += "座號/學號,姓名,目前總點數\r\n";
+      
+      // 將物件轉為陣列並依照學號排序
+      const list = Object.values(currentStudents).sort((a, b) => a.id.localeCompare(b.id, undefined, {numeric: true}));
+      
+      list.forEach(s => {
+        csvContent += `${s.id},${s.name},${s.total}\r\n`;
+      });
+      
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      
+      // 使用當天日期作為預設檔名
+      const date = new Date();
+      const dateString = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
+      link.setAttribute("download", `班級點數清單_${dateString}.csv`);
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     window.showTab = function(tab) {
