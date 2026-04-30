@@ -167,12 +167,13 @@
     } else {
         firebaseConfig = {
             // ⚠️ 上傳到 GitHub 前，請替換成您在 Firebase Console 取得的設定
-apiKey: "AIzaSyBHgd1oZGUWq9VabYRNMNAzBIk1CkQqr84",
+          apiKey: "AIzaSyBHgd1oZGUWq9VabYRNMNAzBIk1CkQqr84",
   authDomain: "count-e1a9e.firebaseapp.com",
   projectId: "count-e1a9e",
   storageBucket: "count-e1a9e.firebasestorage.app",
   messagingSenderId: "268106620866",
   appId: "1:268106620866:web:3df68d25dfa9d7869f005b"
+
         };
     }
     
@@ -273,10 +274,14 @@ apiKey: "AIzaSyBHgd1oZGUWq9VabYRNMNAzBIk1CkQqr84",
 
       inputs.forEach(i => {
         const val = Number(i.value);
-        if (val && val !== 0) {
+        if (!isNaN(val) && val !== 0 && i.value.trim() !== '') {
           const id = i.dataset.id;
           const ref = doc(db, getColPath('students'), id);
-          const currentTotal = currentStudents[id] ? currentStudents[id].total : 0;
+          
+          // 強制轉換為數字，避免字串串接錯誤 ("10" + 5 變成 "105")
+          let currentTotal = currentStudents[id] ? Number(currentStudents[id].total) : 0;
+          if (isNaN(currentTotal)) currentTotal = 0;
+          
           batch.set(ref, { total: currentTotal + val }, { merge: true });
           hasData = true;
         }
@@ -320,16 +325,27 @@ apiKey: "AIzaSyBHgd1oZGUWq9VabYRNMNAzBIk1CkQqr84",
             if (parts.length >= 4) {
               // 完整建檔模式 (從 Sheet 移轉過來): 學號, 姓名, 點數, 密碼
               const name = parts[1];
-              const points = Number(parts[2]) || 0;
+              let points = Number(parts[2]);
+              if (isNaN(points)) points = 0;
+              
               const pwd = parts[3];
-              const currentTotal = currentStudents[id] ? currentStudents[id].total : 0;
+              
+              // 強制轉換防錯
+              let currentTotal = currentStudents[id] ? Number(currentStudents[id].total) : 0;
+              if (isNaN(currentTotal)) currentTotal = 0;
+              
               const finalPoints = (mode === 'add') ? currentTotal + points : points;
               
               batch.set(ref, { id, name, total: finalPoints, pwd }, { merge: true });
             } else {
               // 每週更新模式: 學號, 點數
-              const points = Number(parts[1]) || 0;
-              const currentTotal = currentStudents[id] ? currentStudents[id].total : 0;
+              let points = Number(parts[1]);
+              if (isNaN(points)) points = 0;
+              
+              // 強制轉換防錯
+              let currentTotal = currentStudents[id] ? Number(currentStudents[id].total) : 0;
+              if (isNaN(currentTotal)) currentTotal = 0;
+              
               const finalPoints = (mode === 'add') ? currentTotal + points : points;
               
               batch.set(ref, { total: finalPoints }, { merge: true });
