@@ -5,68 +5,263 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>班級點數管理後台</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
-    body { background-color: #f4f0ea; font-family: "Noto Serif TC", "Microsoft JhengHei", serif; padding-bottom: 30px; color: #4a433c; }
-    .main-container { max-width: 900px; margin: 0 auto; padding: 20px 15px; }
-    .card { background-color: #fffcf7; border: 1px solid #e8e3d3; border-radius: 12px; box-shadow: 0 8px 24px rgba(107, 94, 81, 0.06); margin-bottom: 20px; overflow: hidden; }
-    .title-banner { font-weight: 700; font-size: clamp(1.5rem, 4vw, 2rem); color: #4a433c; margin: 20px 0 30px; letter-spacing: 2px; }
-    
-    .table th { background-color: #f0ebe1; color: #5c544a; border-bottom: 2px solid #e1dacb; white-space: nowrap; font-weight: 600; }
-    .table td { vertical-align: middle; white-space: nowrap; border-bottom: 1px solid #f0ebe1; color: #4a433c; }
-    .point-input { width: 85px; border-radius: 6px; border: 1px solid #dcd7c9; background-color: #fffdfa; text-align: center; padding: 8px; font-size: 16px; color: #4a433c; }
-    .point-input:focus { border-color: #7b8d62; box-shadow: 0 0 0 0.2rem rgba(123, 141, 98, 0.25); outline: none; }
-    .form-control { background-color: #fffdfa; border: 1px solid #dcd7c9; color: #4a433c; }
-    .form-control:focus { border-color: #7b8d62; box-shadow: 0 0 0 0.2rem rgba(123, 141, 98, 0.25); outline: none; }
-    
-    /* Buttons */
-    .btn-primary { background-color: #7b8d62; border-color: #7b8d62; color: #fff; }
-    .btn-primary:hover { background-color: #657551; border-color: #657551; }
-    .btn-dark { background-color: #4a433c; border-color: #4a433c; color: #fff; }
-    .btn-dark:hover { background-color: #36312c; color: #fff; }
-    .btn-outline-primary { color: #7b8d62; border-color: #7b8d62; }
-    .btn-outline-primary:hover { background-color: #7b8d62; color: #fff; }
-    .btn-outline-danger { color: #ba6b66; border-color: #ba6b66; }
-    .btn-outline-danger:hover { background-color: #ba6b66; color: #fff; }
-    .btn-danger { background-color: #ba6b66; border-color: #ba6b66; color: #fff; }
-    .btn-light { background-color: #f0ebe1; border-color: #e8e3d3; color: #4a433c; }
-    .btn-secondary { background-color: #8a8276; border-color: #8a8276; color: #fff; }
-    .modal-content { background-color: #fffcf7; border: 1px solid #e8e3d3; color: #4a433c; }
+    :root {
+      --primary-color: #2980b9; /* 深藍色 */
+      --primary-hover: #1f618d; /* 更深的藍色 */
+      --secondary-color: #3498db; /* 較亮的藍色 */
+      --accent-color: #f1c40f; /* 金黃色點綴 */
+      --background-color: #f0f8ff; /* 愛麗絲藍/極淡藍背景 */
+      --card-background: #ffffff; /* 純白卡片背景 */
+      --text-color: #333333; /* 深灰色文字 */
+      --border-color: #a9cce3; /* 淡藍色邊框 */
+    }
 
-    .nav-pills { gap: 10px; }
-    .nav-pills .nav-link { font-weight: 600; color: #8a8276; border-radius: 8px; padding: 10px 15px; transition: 0.3s; cursor: pointer; }
-    .nav-pills .nav-link.active { background-color: #7b8d62; color: white; box-shadow: 0 4px 10px rgba(123, 141, 98, 0.3); }
+    body {
+      background-color: var(--background-color);
+      font-family: "Roboto", "Microsoft JhengHei", sans-serif;
+      padding-bottom: 30px;
+      color: var(--text-color);
+    }
+
+    .main-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px 15px;
+    }
+
+    .card {
+      background-color: var(--card-background);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(41, 128, 185, 0.08); /* 藍色系陰影 */
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .title-banner {
+      font-weight: 700;
+      font-size: clamp(1.8rem, 5vw, 2.4rem);
+      color: var(--primary-color);
+      margin: 25px 0 35px;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 使用 CSS 偽元素插入點數圖示 (金幣) */
+    .title-banner::before {
+      content: "💎"; /* 改為鑽石圖示 */
+      font-size: 2.8rem;
+      margin-right: 15px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    }
+
+    /* 表格樣式 */
+    .table th {
+      background-color: #ebf5fb; /* 極淡藍色 */
+      color: var(--primary-color);
+      border-bottom: 2px solid var(--border-color);
+      white-space: nowrap;
+      font-weight: 600;
+    }
+    .table td {
+      vertical-align: middle;
+      white-space: nowrap;
+      border-bottom: 1px solid #ebf5fb;
+      color: var(--text-color);
+    }
+    .table-hover tbody tr:hover {
+      background-color: #f4faff; /* 懸停時的淡藍色 */
+    }
+
+    /* 輸入框樣式 */
+    .point-input {
+      width: 85px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background-color: #fafdff;
+      text-align: center;
+      padding: 8px;
+      font-size: 16px;
+      color: var(--text-color);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .point-input:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 0.25rem rgba(41, 128, 185, 0.25);
+      outline: none;
+    }
+    .form-control {
+      background-color: #fafdff;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      border-radius: 10px;
+    }
+    .form-control:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 0.25rem rgba(41, 128, 185, 0.25);
+      outline: none;
+    }
+
+    /* 按鈕樣式 - 藍色系 */
+    .btn-primary {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+      color: #fff;
+      font-weight: 600;
+    }
+    .btn-primary:hover, .btn-primary:active, .btn-primary:focus {
+      background-color: var(--primary-hover) !important;
+      border-color: var(--primary-hover) !important;
+    }
+    .btn-dark {
+      background-color: #154360; /* 深海藍 */
+      border-color: #154360;
+      color: #fff;
+      font-weight: 600;
+    }
+    .btn-dark:hover {
+      background-color: #1a5276;
+      border-color: #1a5276;
+    }
+    .btn-outline-primary {
+      color: var(--primary-color);
+      border-color: var(--primary-color);
+      font-weight: 600;
+    }
+    .btn-outline-primary:hover {
+      background-color: var(--primary-color);
+      color: #fff;
+    }
+    .btn-outline-danger {
+      color: var(--secondary-color);
+      border-color: var(--secondary-color);
+      font-weight: 600;
+    }
+    .btn-outline-danger:hover {
+      background-color: var(--secondary-color);
+      color: #fff;
+    }
+    .btn-danger {
+      background-color: var(--secondary-color);
+      border-color: var(--secondary-color);
+      color: #fff;
+      font-weight: 600;
+    }
+    .btn-danger:hover {
+      background-color: #2980b9;
+      border-color: #2980b9;
+    }
+    .btn-light {
+      background-color: #ebf5fb;
+      border-color: var(--border-color);
+      color: var(--primary-color);
+      font-weight: 600;
+    }
+    .btn-light:hover {
+      background-color: #d6eaf8;
+      border-color: #a9cce3;
+    }
+    .btn-secondary {
+      background-color: #bdc3c7;
+      border-color: #bdc3c7;
+      color: #fff;
+      font-weight: 600;
+    }
+    .btn-secondary:hover {
+      background-color: #a6acaf;
+      border-color: #a6acaf;
+    }
+
+    /* 彈窗樣式 */
+    .modal-content {
+      background-color: var(--card-background);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      border-radius: 16px;
+    }
+
+    /* 導覽列樣式 */
+    .nav-pills {
+      gap: 12px;
+    }
+    .nav-pills .nav-link {
+      font-weight: 600;
+      color: var(--primary-color);
+      border-radius: 10px;
+      padding: 12px 20px;
+      transition: 0.3s;
+      cursor: pointer;
+      background-color: #ebf5fb;
+      border: 1px solid transparent;
+    }
+    .nav-pills .nav-link:hover {
+      background-color: #d6eaf8;
+      border-color: var(--border-color);
+    }
+    .nav-pills .nav-link.active {
+      background-color: var(--primary-color);
+      color: white;
+      box-shadow: 0 4px 12px rgba(41, 128, 185, 0.3);
+      border-color: transparent;
+    }
     @media (max-width: 576px) {
       .nav-pills { flex-direction: column; }
       .nav-pills .nav-item { width: 100%; }
       .nav-pills .nav-link { text-align: center; width: 100%; }
     }
+
+    /* 其他元素樣式 */
+    .alert-light {
+      background-color: #ebf5fb;
+      border-color: var(--border-color);
+      color: var(--primary-color);
+      border-radius: 10px;
+    }
+    hr {
+      border-color: var(--border-color);
+      opacity: 0.5;
+    }
+    .text-primary {
+      color: var(--primary-color) !important;
+    }
+    .shadow {
+      box-shadow: 0 0.5rem 1rem rgba(41, 128, 185, 0.15) !important;
+    }
+    .shadow-sm {
+      box-shadow: 0 0.125rem 0.25rem rgba(41, 128, 185, 0.075) !important;
+    }
   </style>
 </head>
 <body>
   <div class="main-container">
-    <div class="title-banner text-center">🏮 班級點數管理系統</div>
+    <!-- 標題橫幅，圖示已由 CSS 的 ::before 處理 -->
+    <div class="title-banner text-center">班級點數管理系統</div>
 
     <!-- 驗證區 -->
     <div id="loginBox" class="card p-4 p-md-5">
-      <h5 class="fw-bold mb-4 text-center">管理員驗證</h5>
-      <input type="password" id="adminPwd" class="form-control form-control-lg mb-3" placeholder="請輸入管理密碼">
-      <button class="btn btn-dark btn-lg w-100 rounded-3 shadow-sm" onclick="login()" id="loginBtn">登入系統</button>
+      <h5 class="fw-bold mb-4 text-center text-primary">管理員驗證</h5>
+      <input type="password" id="adminPwd" class="form-control form-control-lg mb-4" placeholder="請輸入管理密碼">
+      <button class="btn btn-dark btn-lg w-100 rounded-3 shadow" onclick="login()" id="loginBtn">登入系統</button>
     </div>
 
     <!-- 管理主介面 -->
     <div id="adminPanel" style="display:none;">
       <ul class="nav nav-pills mb-4 justify-content-center">
-        <li class="nav-item"><a class="nav-link active" onclick="showTab('edit')">🖌️ 手動輸入增減</a></li>
-        <li class="nav-item"><a class="nav-link" onclick="showTab('import')">📜 匯入與匯出</a></li>
-        <li class="nav-item"><a class="nav-link" onclick="showTab('setting')">⛩️ 系統設定</a></li>
+        <!-- 更新了導覽列的圖示 -->
+        <li class="nav-item"><a class="nav-link active" onclick="showTab('edit')">📝 手動輸入增減</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showTab('import')">📂 匯入與匯出</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="showTab('setting')">⚙️ 系統設定</a></li>
       </ul>
 
       <!-- 方式 1: 手動輸入列表 -->
       <div id="tab-edit" class="card p-3 p-md-4">
-        <h5 class="fw-bold mb-3 px-2">每週點數紀錄</h5>
+        <h5 class="fw-bold mb-3 px-2 text-primary">每週點數紀錄</h5>
         <div class="table-responsive">
-          <table class="table align-middle table-hover">
+          <table class="table align-middle table-hover mb-0">
             <thead>
               <tr>
                 <th class="ps-3">座號姓名</th>
@@ -75,67 +270,72 @@
               </tr>
             </thead>
             <tbody id="stuTable"></tbody>
-      </table>
-    </div>
-    <button class="btn btn-primary btn-lg w-100 mt-3 py-3 fw-bold rounded-3 shadow" id="saveBtn" onclick="submitBatch()">
-       🎌 統一更新全班點數 (執行累加)
-    </button>
-  </div>
-
-  <!-- 方式 2: CSV 匯入與匯出 -->
-  <div id="tab-import" class="card p-4 p-md-5" style="display:none;">
-    <h5 class="fw-bold mb-3">📤 匯出資料</h5>
-    <button class="btn btn-secondary w-100 py-3 fw-bold rounded-3 mb-4" onclick="exportData()">
-      📊 下載全班點數清單 (CSV 試算表)
-    </button>
-    
-    <hr class="my-4" style="border-color: #e8e3d3;">
-
-    <h5 class="fw-bold mb-3">📜 大量更新點數 (智慧模式)</h5>
-    <div class="alert alert-light border small text-muted mb-4" style="background-color: #fdfaf5; border-color: #e8e3d3;">
-      <b>📌 智慧判斷功能：</b><br>
-      • <b>【初次移轉】</b> 貼上 <code>學號,姓名,點數,密碼</code> 建立完整資料。<br>
-      • <b>【日後更新】</b> 貼上 <code>學號,點數</code> 即可直接對現有分數進行操作。
-    </div>
-    <textarea id="csvInput" class="form-control mb-4 rounded-3" rows="8" placeholder="1,5&#10;2,-2"></textarea>
-    
-    <div class="row g-3">
-      <div class="col-12 col-md-6">
-        <button class="btn btn-outline-primary w-100 py-3 fw-bold rounded-3 h-100" onclick="importData('add')">
-          🍵 依據內容「累加」
-          <div class="small fw-normal mt-1">原有 100 + 輸入 5 = 105</div>
+          </table>
+        </div>
+        <!-- 更新了按鈕的圖示和文字 -->
+        <button class="btn btn-primary btn-lg w-100 mt-4 py-3 fw-bold rounded-3 shadow" id="saveBtn" onclick="submitBatch()">
+           ✨ 統一更新全班點數 (執行累加)
         </button>
       </div>
-      <div class="col-12 col-md-6">
-        <button class="btn btn-outline-danger w-100 py-3 fw-bold rounded-3 h-100" onclick="importData('replace')">
-          🌸 覆蓋為「全新值」
-          <div class="small fw-normal mt-1">原有 100 會直接變成 5</div>
+
+      <!-- 方式 2: CSV 匯入與匯出 -->
+      <div id="tab-import" class="card p-4 p-md-5" style="display:none;">
+        <h5 class="fw-bold mb-3 text-primary">📤 匯出資料</h5>
+        <!-- 更新了按鈕樣式 -->
+        <button class="btn btn-outline-primary w-100 py-3 fw-bold rounded-3 mb-4 shadow-sm" onclick="exportData()">
+          📊 下載全班點數清單 (CSV 試算表)
         </button>
+        
+        <hr class="my-4">
+
+        <h5 class="fw-bold mb-3 text-primary">📜 大量更新點數 (智慧模式)</h5>
+        <div class="alert alert-light border small mb-4">
+          <b>📌 智慧判斷功能：</b><br>
+          • <b>【初次移轉】</b> 貼上 <code>學號,姓名,點數,密碼</code> 建立完整資料。<br>
+          • <b>【日後更新】</b> 貼上 <code>學號,點數</code> 即可直接對現有分數進行操作。
+        </div>
+        <textarea id="csvInput" class="form-control mb-4 rounded-3" rows="8" placeholder="1,5&#10;2,-2"></textarea>
+        
+        <div class="row g-3">
+          <div class="col-12 col-md-6">
+            <!-- 更新了按鈕的圖示和樣式 -->
+            <button class="btn btn-primary w-100 py-3 fw-bold rounded-3 h-100 shadow-sm" onclick="importData('add')">
+              ➕ 依據內容「累加」
+              <div class="small fw-normal mt-1 opacity-75">原有 100 + 輸入 5 = 105</div>
+            </button>
+          </div>
+          <div class="col-12 col-md-6">
+            <!-- 更新了按鈕的圖示和樣式 -->
+            <button class="btn btn-danger w-100 py-3 fw-bold rounded-3 h-100 shadow-sm" onclick="importData('replace')">
+              🔄 覆蓋為「全新值」
+              <div class="small fw-normal mt-1 opacity-75">原有 100 會直接變成 5</div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 其他設定 -->
+      <div id="tab-setting" class="card p-4 p-md-5" style="display:none;">
+        <h5 class="fw-bold mb-4 text-primary">系統安全設定</h5>
+        <label class="form-label text-muted small fw-bold">新管理密碼</label>
+        <div class="input-group mb-4">
+          <input type="text" id="newAdminPwd" class="form-control form-control-lg" placeholder="輸入新密碼">
+          <button class="btn btn-secondary px-4 fw-bold" onclick="changeAdminPwd()">更新</button>
+        </div>
+        <hr class="my-4">
+        <!-- 更新了按鈕的圖示 -->
+        <button class="btn btn-light text-danger w-100 py-3 fw-bold rounded-3 shadow-sm" onclick="location.reload()">🔒 登出系統</button>
       </div>
     </div>
   </div>
 
-  <!-- 其他設定 -->
-  <div id="tab-setting" class="card p-4 p-md-5" style="display:none;">
-    <h5 class="fw-bold mb-4">系統安全設定</h5>
-    <label class="form-label text-muted small">新管理密碼</label>
-    <div class="input-group mb-4">
-      <input type="text" id="newAdminPwd" class="form-control form-control-lg" placeholder="輸入新密碼">
-      <button class="btn btn-secondary px-4" onclick="changeAdminPwd()">更新</button>
-    </div>
-    <hr class="my-4" style="border-color: #e8e3d3;">
-    <button class="btn btn-light text-danger w-100 py-3 fw-bold rounded-3" onclick="location.reload()">🎋 登出系統</button>
-  </div>
-</div>
-</div>
-
-<!-- 自訂彈窗 -->
+  <!-- 自訂彈窗 -->
   <div class="modal fade" id="msgModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
       <div class="modal-content border-0 shadow">
         <div class="modal-body text-center p-4">
-          <div id="msgText" class="fs-6 mb-4 mt-2 text-dark"></div>
-          <button type="button" class="btn btn-primary w-100 rounded-3" data-bs-dismiss="modal">確定</button>
+          <div id="msgText" class="fs-6 mb-4 mt-2 fw-bold text-dark"></div>
+          <button type="button" class="btn btn-primary w-100 rounded-3 fw-bold" data-bs-dismiss="modal">確定</button>
         </div>
       </div>
     </div>
@@ -144,10 +344,10 @@
     <div class="modal-dialog modal-dialog-centered modal-sm">
       <div class="modal-content border-0 shadow">
         <div class="modal-body text-center p-4">
-          <div id="confirmText" class="fs-6 mb-4 mt-2 text-dark"></div>
+          <div id="confirmText" class="fs-6 mb-4 mt-2 fw-bold text-dark"></div>
           <div class="d-flex gap-2">
-            <button type="button" class="btn btn-light w-50 rounded-3" data-bs-dismiss="modal" id="confirmCancel">取消</button>
-            <button type="button" class="btn btn-danger w-50 rounded-3" id="confirmOk">確定執行</button>
+            <button type="button" class="btn btn-light w-50 rounded-3 fw-bold" data-bs-dismiss="modal" id="confirmCancel">取消</button>
+            <button type="button" class="btn btn-danger w-50 rounded-3 fw-bold" id="confirmOk">確定執行</button>
           </div>
         </div>
       </div>
@@ -167,7 +367,7 @@
     } else {
         firebaseConfig = {
             // ⚠️ 上傳到 GitHub 前，請替換成您在 Firebase Console 取得的設定
-          apiKey: "AIzaSyBHgd1oZGUWq9VabYRNMNAzBIk1CkQqr84",
+       apiKey: "AIzaSyBHgd1oZGUWq9VabYRNMNAzBIk1CkQqr84",
   authDomain: "count-e1a9e.firebaseapp.com",
   projectId: "count-e1a9e",
   storageBucket: "count-e1a9e.firebasestorage.app",
@@ -299,7 +499,7 @@
       } catch (err) {
         showMsg('更新失敗，請檢查網路。');
       } finally {
-        btn.disabled = false; btn.innerText = '🎌 統一更新全班點數 (執行累加)';
+        btn.disabled = false; btn.innerText = '✨ 統一更新全班點數 (執行累加)';
       }
     }
 
@@ -321,35 +521,41 @@
           if (parts.length >= 2 && parts[0] !== '') {
             const id = parts[0];
             const ref = doc(db, getColPath('students'), id);
-            
+
+            let points = 0;
+            let name = undefined;
+            let pwd = undefined;
+
+            // 🌟 修正：智慧判斷欄位數量，完美相容所有格式
             if (parts.length >= 4) {
-              // 完整建檔模式 (從 Sheet 移轉過來): 學號, 姓名, 點數, 密碼
-              const name = parts[1];
-              let points = Number(parts[2]);
-              if (isNaN(points)) points = 0;
-              
-              const pwd = parts[3];
-              
-              // 強制轉換防錯
-              let currentTotal = currentStudents[id] ? Number(currentStudents[id].total) : 0;
-              if (isNaN(currentTotal)) currentTotal = 0;
-              
-              const finalPoints = (mode === 'add') ? currentTotal + points : points;
-              
-              batch.set(ref, { id, name, total: finalPoints, pwd }, { merge: true });
+              // 格式 1 (初次建檔)：學號, 姓名, 點數, 密碼
+              name = parts[1];
+              points = Number(parts[2]);
+              pwd = parts[3];
+            } else if (parts.length === 3) {
+              // 格式 2 (從系統匯出的格式)：學號, 姓名, 點數
+              name = parts[1];
+              points = Number(parts[2]);
             } else {
-              // 每週更新模式: 學號, 點數
-              let points = Number(parts[1]);
-              if (isNaN(points)) points = 0;
-              
-              // 強制轉換防錯
-              let currentTotal = currentStudents[id] ? Number(currentStudents[id].total) : 0;
-              if (isNaN(currentTotal)) currentTotal = 0;
-              
-              const finalPoints = (mode === 'add') ? currentTotal + points : points;
-              
-              batch.set(ref, { total: finalPoints }, { merge: true });
+              // 格式 3 (極簡更新)：學號, 點數
+              points = Number(parts[1]);
             }
+
+            // 防呆機制：如果轉換出來不是數字，強制設為 0
+            if (isNaN(points)) points = 0;
+            
+            // 讀取目前資料庫的總分，防呆處理
+            let currentTotal = currentStudents[id] ? Number(currentStudents[id].total) : 0;
+            if (isNaN(currentTotal)) currentTotal = 0;
+            
+            const finalPoints = (mode === 'add') ? currentTotal + points : points;
+            
+            // 準備寫入的資料，只更新有提供的欄位，不影響其他既有資料
+            const updateData = { total: finalPoints };
+            if (name !== undefined) updateData.name = name;
+            if (pwd !== undefined) updateData.pwd = pwd;
+
+            batch.set(ref, updateData, { merge: true });
             count++;
           }
         }
