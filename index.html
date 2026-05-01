@@ -244,7 +244,7 @@
     <!-- 驗證區 -->
     <div id="loginBox" class="card p-4 p-md-5">
       <h5 class="fw-bold mb-4 text-center text-primary">管理員驗證</h5>
-      <input type="password" id="adminPwd" class="form-control form-control-lg mb-4" placeholder="請輸入管理密碼">
+      <input type="password" id="adminPwd" class="form-control form-control-lg mb-4" placeholder="請輸入管理密碼 (預設: 1234)">
       <button class="btn btn-dark btn-lg w-100 rounded-3 shadow" onclick="login()" id="loginBtn">登入系統</button>
     </div>
 
@@ -357,9 +357,10 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   
   <script type="module">
+    // 🌟 修正1：在此處的 import 列表中，新增引入 `increment`
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, getDocs, collection, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, getDocs, collection, writeBatch, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     let firebaseConfig;
     if (typeof __firebase_config !== 'undefined') {
@@ -473,16 +474,28 @@
       let hasData = false;
 
       inputs.forEach(i => {
-        const val = Number(i.value);
-        if (!isNaN(val) && val !== 0 && i.value.trim() !== '') {
+        // 🌟 修正2：更嚴謹地過濾掉空白或異常字元
+        const rawValue = i.value.trim();
+        if (rawValue === '') return; 
+
+        const val = Number(rawValue);
+        if (!isNaN(val) && val !== 0) {
           const id = i.dataset.id;
           const ref = doc(db, getColPath('students'), id);
           
-          // 強制轉換為數字，避免字串串接錯誤 ("10" + 5 變成 "105")
-          let currentTotal = currentStudents[id] ? Number(currentStudents[id].total) : 0;
-          if (isNaN(currentTotal)) currentTotal = 0;
+          let dbValue = currentStudents[id] ? currentStudents[id].total : 0;
           
-          batch.set(ref, { total: currentTotal + val }, { merge: true });
+          // 🌟 修正3：使用 increment 確保絕對精準的累加，防止多人同時編輯互相覆蓋
+          if (typeof dbValue === 'number') {
+            // 如果資料庫裡是正確的數字格式，使用原生 increment 保證原子性加法
+            batch.set(ref, { total: increment(val) }, { merge: true });
+          } else {
+            // 如果舊資料不小心存成字串 (例如 "10")，自動轉型修復為數字
+            let currentTotal = Number(dbValue);
+            if (isNaN(currentTotal)) currentTotal = 0;
+            batch.set(ref, { total: currentTotal + val }, { merge: true });
+          }
+          
           hasData = true;
         }
       });
@@ -526,32 +539,35 @@
             let name = undefined;
             let pwd = undefined;
 
-            // 🌟 修正：智慧判斷欄位數量，完美相容所有格式
             if (parts.length >= 4) {
-              // 格式 1 (初次建檔)：學號, 姓名, 點數, 密碼
               name = parts[1];
               points = Number(parts[2]);
               pwd = parts[3];
             } else if (parts.length === 3) {
-              // 格式 2 (從系統匯出的格式)：學號, 姓名, 點數
               name = parts[1];
               points = Number(parts[2]);
             } else {
-              // 格式 3 (極簡更新)：學號, 點數
               points = Number(parts[1]);
             }
 
-            // 防呆機制：如果轉換出來不是數字，強制設為 0
             if (isNaN(points)) points = 0;
             
-            // 讀取目前資料庫的總分，防呆處理
-            let currentTotal = currentStudents[id] ? Number(currentStudents[id].total) : 0;
-            if (isNaN(currentTotal)) currentTotal = 0;
+            let dbValue = currentStudents[id] ? currentStudents[id].total : 0;
+            const updateData = {};
             
-            const finalPoints = (mode === 'add') ? currentTotal + points : points;
+            // 🌟 修正4：匯入檔案的累加功能同步支援 increment
+            if (mode === 'add') {
+               if (typeof dbValue === 'number') {
+                  updateData.total = increment(points);
+               } else {
+                  let currentTotal = Number(dbValue);
+                  if (isNaN(currentTotal)) currentTotal = 0;
+                  updateData.total = currentTotal + points;
+               }
+            } else {
+               updateData.total = points;
+            }
             
-            // 準備寫入的資料，只更新有提供的欄位，不影響其他既有資料
-            const updateData = { total: finalPoints };
             if (name !== undefined) updateData.name = name;
             if (pwd !== undefined) updateData.pwd = pwd;
 
