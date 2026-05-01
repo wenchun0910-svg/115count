@@ -428,7 +428,10 @@
         <tr>
           <td class="ps-3"><span class="fw-bold text-primary">${s.id}</span> <span class="ms-1">${s.name}</span></td>
           <td class="text-center fw-bold fs-5 text-dark">${s.total}</td>
-          <td class="text-end pe-3"><input type="number" class="point-input" id="in-${s.id}" data-id="${s.id}" placeholder="+/-"></td>
+          <td class="text-end pe-3">
+            <!-- 🌟 新增 step="1" 限制只能輸入整數，避免小數點造成錯誤 -->
+            <input type="number" class="point-input" id="in-${s.id}" data-id="${s.id}" placeholder="+/-" step="1">
+          </td>
         </tr>
       `).join('');
     }
@@ -474,24 +477,26 @@
       let hasData = false;
 
       inputs.forEach(i => {
-        // 🌟 修正2：更嚴謹地過濾掉空白或異常字元
+        // 更嚴謹地過濾掉空白或異常字元
         const rawValue = i.value.trim();
         if (rawValue === '') return; 
 
-        const val = Number(rawValue);
+        // 🌟 強制轉換為「整數 (Integer)」，杜絕任何字串相加的問題
+        const val = parseInt(rawValue, 10);
+        
         if (!isNaN(val) && val !== 0) {
           const id = i.dataset.id;
           const ref = doc(db, getColPath('students'), id);
           
           let dbValue = currentStudents[id] ? currentStudents[id].total : 0;
           
-          // 🌟 修正3：使用 increment 確保絕對精準的累加，防止多人同時編輯互相覆蓋
+          // 使用 increment 確保絕對精準的累加
+          // 💡 原理：Firebase 的 increment 支援負數，如果傳入 -5 就會正確執行減 5
           if (typeof dbValue === 'number') {
-            // 如果資料庫裡是正確的數字格式，使用原生 increment 保證原子性加法
             batch.set(ref, { total: increment(val) }, { merge: true });
           } else {
-            // 如果舊資料不小心存成字串 (例如 "10")，自動轉型修復為數字
-            let currentTotal = Number(dbValue);
+            // 如果舊資料不小心存成字串 (例如 "10")，自動轉型修復為數字再運算
+            let currentTotal = parseInt(dbValue, 10);
             if (isNaN(currentTotal)) currentTotal = 0;
             batch.set(ref, { total: currentTotal + val }, { merge: true });
           }
