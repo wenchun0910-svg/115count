@@ -244,7 +244,7 @@
     <!-- 驗證區 -->
     <div id="loginBox" class="card p-4 p-md-5">
       <h5 class="fw-bold mb-4 text-center text-primary">管理員驗證</h5>
-      <input type="password" id="adminPwd" class="form-control form-control-lg mb-4" placeholder="請輸入管理密碼 (預設: 1234)">
+      <input type="password" id="adminPwd" class="form-control form-control-lg mb-4" placeholder="請輸入管理密碼">
       <button class="btn btn-dark btn-lg w-100 rounded-3 shadow" onclick="login()" id="loginBtn">登入系統</button>
     </div>
 
@@ -368,7 +368,7 @@
     } else {
         firebaseConfig = {
             // ⚠️ 上傳到 GitHub 前，請替換成您在 Firebase Console 取得的設定
-       apiKey: "AIzaSyBHgd1oZGUWq9VabYRNMNAzBIk1CkQqr84",
+         apiKey: "AIzaSyBHgd1oZGUWq9VabYRNMNAzBIk1CkQqr84",
   authDomain: "count-e1a9e.firebaseapp.com",
   projectId: "count-e1a9e",
   storageBucket: "count-e1a9e.firebasestorage.app",
@@ -416,11 +416,33 @@
       const snap = await getDocs(collection(db, getColPath('students')));
       const list = [];
       currentStudents = {};
+      
+      // 🌟 新增：自動修正資料庫裡的錯誤格式 (確保全部為純數字)
+      const fixBatch = writeBatch(db);
+      let needsFix = false;
+
       snap.forEach(d => {
         const data = d.data();
+        
+        // 強制檢查並修復總分
+        let safeTotal = Number(data.total);
+        if (isNaN(safeTotal)) safeTotal = 0;
+
+        if (data.total !== safeTotal || typeof data.total !== 'number') {
+          data.total = safeTotal;
+          fixBatch.set(d.ref, { total: safeTotal }, { merge: true });
+          needsFix = true;
+        }
+
         list.push(data);
         currentStudents[data.id] = data;
       });
+      
+      // 如果有修復動作，在背景寫回資料庫
+      if (needsFix) {
+        await fixBatch.commit();
+      }
+
       // 依照學號/座號排序
       list.sort((a, b) => a.id.localeCompare(b.id, undefined, {numeric: true}));
       
@@ -477,29 +499,18 @@
       let hasData = false;
 
       inputs.forEach(i => {
-        // 更嚴謹地過濾掉空白或異常字元
         const rawValue = i.value.trim();
         if (rawValue === '') return; 
 
-        // 🌟 強制轉換為「整數 (Integer)」，杜絕任何字串相加的問題
-        const val = parseInt(rawValue, 10);
+        // 🌟 修正：改用 Number 完整讀取數值，避免 parseInt 截斷小數點 (例如把 4.9 變成 4)
+        const val = Number(rawValue);
         
         if (!isNaN(val) && val !== 0) {
           const id = i.dataset.id;
           const ref = doc(db, getColPath('students'), id);
           
-          let dbValue = currentStudents[id] ? currentStudents[id].total : 0;
-          
-          // 使用 increment 確保絕對精準的累加
-          // 💡 原理：Firebase 的 increment 支援負數，如果傳入 -5 就會正確執行減 5
-          if (typeof dbValue === 'number') {
-            batch.set(ref, { total: increment(val) }, { merge: true });
-          } else {
-            // 如果舊資料不小心存成字串 (例如 "10")，自動轉型修復為數字再運算
-            let currentTotal = parseInt(dbValue, 10);
-            if (isNaN(currentTotal)) currentTotal = 0;
-            batch.set(ref, { total: currentTotal + val }, { merge: true });
-          }
+          // 因為資料庫已確保全部為 Number，可以直接放心使用最精準的 Firebase increment
+          batch.set(ref, { total: increment(val) }, { merge: true });
           
           hasData = true;
         }
@@ -557,18 +568,11 @@
 
             if (isNaN(points)) points = 0;
             
-            let dbValue = currentStudents[id] ? currentStudents[id].total : 0;
             const updateData = {};
             
-            // 🌟 修正4：匯入檔案的累加功能同步支援 increment
+            // 🌟 修正：簡化匯入時的累加邏輯，同樣全面改用最穩定的 increment
             if (mode === 'add') {
-               if (typeof dbValue === 'number') {
-                  updateData.total = increment(points);
-               } else {
-                  let currentTotal = Number(dbValue);
-                  if (isNaN(currentTotal)) currentTotal = 0;
-                  updateData.total = currentTotal + points;
-               }
+               updateData.total = increment(points);
             } else {
                updateData.total = points;
             }
